@@ -1,0 +1,225 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 200 38% 78%;
+    --foreground: 205 55% 8%;
+    --card: 200 35% 76%;
+    --card-foreground: 205 55% 8%;
+    --popover: 200 35% 76%;
+    --popover-foreground: 205 55% 8%;
+    --primary: 195 65% 28%;
+    --primary-foreground: 60 10% 98%;
+    --secondary: 200 30% 72%;
+    --secondary-foreground: 205 40% 12%;
+    --muted: 200 28% 68%;
+    --muted-foreground: 205 30% 22%;
+    --accent: 195 75% 32%;
+    --accent-foreground: 60 10% 98%;
+    --destructive: 0 84% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 200 28% 64%;
+    --input: 200 28% 64%;
+    --ring: 195 65% 28%;
+    --radius: 0.75rem;
+  }
+  .dark {
+    --background: 195 40% 5%;
+    --foreground: 162 12% 93%;
+    --card: 195 35% 8%;
+    --card-foreground: 162 12% 93%;
+    --popover: 195 35% 8%;
+    --popover-foreground: 162 12% 93%;
+    --primary: 170 55% 44%;
+    --primary-foreground: 195 40% 5%;
+    --secondary: 195 28% 11%;
+    --secondary-foreground: 162 10% 82%;
+    --muted: 195 22% 14%;
+    --muted-foreground: 180 12% 50%;
+    --accent: 195 65% 50%;
+    --accent-foreground: 195 40% 5%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 195 22% 12%;
+    --input: 195 22% 12%;
+    --ring: 170 55% 44%;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  body {
+    @apply bg-background text-foreground;
+    margin: 0; padding: 0; overflow-x: hidden;
+  }
+  html { scroll-behavior: smooth; overflow-x: hidden; }
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: hsl(var(--primary) / 0.3); border-radius: 4px; }
+}
+
+/* ===================== GLOBAL BODY NOISE ===================== */
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E") repeat;
+  background-size: 128px 128px;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+}
+
+/* ===================== SOLID PANELS WITH NOISE ===================== */
+
+.frost, .frost-heavy, .frost-light {
+  position: relative;
+  isolation: isolate;
+}
+.frost::after, .frost-heavy::after, .frost-light::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  z-index: 1;
+  pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E") repeat;
+  background-size: 128px 128px;
+  mix-blend-mode: overlay;
+}
+.dark .frost::after, .dark .frost-heavy::after, .dark .frost-light::after {
+  opacity: 0.14;
+}
+:root:not(.dark) .frost::after, :root:not(.dark) .frost-heavy::after, :root:not(.dark) .frost-light::after {
+  opacity: 0.10;
+}
+.frost > *, .frost-heavy > *, .frost-light > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* --- Dark mode frost --- */
+.dark .frost {
+  background: hsl(170, 55%, 16%);
+  border: 1px solid rgba(50, 173, 153, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+.dark .frost:hover {
+  background: hsl(170, 55%, 18%);
+  border-color: rgba(50, 173, 153, 0.3);
+}
+
+.dark .frost-heavy {
+  background: hsl(170, 55%, 14%);
+  border: 1px solid rgba(50, 173, 153, 0.25);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+.dark .frost-heavy:hover {
+  background: hsl(170, 55%, 16%);
+  border-color: rgba(50, 173, 153, 0.35);
+}
+
+.dark .frost-light {
+  background: hsl(170, 50%, 18%);
+  border: 1px solid rgba(50, 173, 153, 0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+.dark .frost-light:hover {
+  background: hsl(170, 50%, 20%);
+  border-color: rgba(50, 173, 153, 0.22);
+}
+
+/* --- Light mode frost (strong blue-tinted panels) --- */
+:root:not(.dark) .frost {
+  background: hsl(200, 35%, 83%);
+  border: 1px solid rgba(30, 90, 140, 0.3);
+  box-shadow: 0 8px 32px rgba(15, 50, 80, 0.12), 0 0 0 1px rgba(30, 90, 140, 0.08);
+}
+:root:not(.dark) .frost:hover {
+  background: hsl(200, 38%, 80%);
+  border-color: rgba(30, 90, 140, 0.4);
+}
+
+:root:not(.dark) .frost-heavy {
+  background: hsl(200, 32%, 80%);
+  border: 1px solid rgba(30, 90, 140, 0.32);
+  box-shadow: 0 8px 32px rgba(15, 50, 80, 0.14), 0 0 0 1px rgba(30, 90, 140, 0.1);
+}
+:root:not(.dark) .frost-heavy:hover {
+  background: hsl(200, 35%, 78%);
+  border-color: rgba(30, 90, 140, 0.42);
+}
+
+:root:not(.dark) .frost-light {
+  background: hsl(200, 30%, 85%);
+  border: 1px solid rgba(30, 90, 140, 0.22);
+  box-shadow: 0 4px 16px rgba(15, 50, 80, 0.08);
+}
+:root:not(.dark) .frost-light:hover {
+  background: hsl(200, 32%, 83%);
+  border-color: rgba(30, 90, 140, 0.32);
+}
+
+/* ===================== HAWAIIAN TRIBAL PATTERN OVERLAY ===================== */
+
+.tribal-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("/art/tribal-pattern.svg") repeat;
+  background-size: min(200px, 50vw) min(200px, 50vw);
+  z-index: 0;
+  pointer-events: none;
+}
+.dark .tribal-bg::before { opacity: 0.18; }
+:root:not(.dark) .tribal-bg::before { opacity: 0.22; }
+.tribal-bg > * { position: relative; z-index: 1; }
+
+/* ===================== HAWAIIAN TATTOO ART OVERLAYS (layout only, animated via Framer Motion) ===================== */
+
+.tattoo-corner {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.tattoo-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 120px;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.tattoo-motif {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+@layer utilities {
+  .text-shadow-sm { text-shadow: 0 1px 4px rgba(0,0,0,0.5); }
+  .text-shadow { text-shadow: 0 2px 12px rgba(0,0,0,0.6); }
+  .text-shadow-lg { text-shadow: 0 4px 24px rgba(0,0,0,0.8), 0 0 60px rgba(0,0,0,0.3); }
+  .glow-teal { filter: drop-shadow(0 0 12px hsla(170, 60%, 50%, 0.5)); }
+  .glow-blue { filter: drop-shadow(0 0 12px hsla(195, 65%, 52%, 0.5)); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px hsla(195, 55%, 44%, 0.25), 0 0 5px hsla(195, 55%, 44%, 0.45); }
+  50% { box-shadow: 0 0 35px hsla(195, 55%, 44%, 0.4), 0 0 10px hsla(195, 55%, 44%, 0.65); }
+}
+.animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
