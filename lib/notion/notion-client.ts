@@ -1,4 +1,6 @@
 import { Client } from "@notionhq/client"
+import { NotionAPI } from "notion-client"
+import type { ExtendedRecordMap } from "notion-types"
 
 interface PropertyFilter {
   property: string
@@ -9,11 +11,6 @@ type DataSourceFilter =
   | PropertyFilter
   | { and: PropertyFilter[] }
   | { or: PropertyFilter[] }
-
-interface DataSourceSort {
-  property: string
-  direction: "ascending" | "descending"
-}
 
 interface DataSource {
   id: string
@@ -50,6 +47,7 @@ export interface NotionTimelinePage {
 
 export class TimelineNotionClient {
   private readonly client: Client | null = null
+  private readonly notionAPI = new NotionAPI()
   private readonly databaseId: string | undefined
   private readonly dataSourceCache: Map<string, string> = new Map()
 
@@ -63,6 +61,10 @@ export class TimelineNotionClient {
         notionVersion: "2025-09-03",
       })
     }
+  }
+
+  async getPage(pageId: string): Promise<ExtendedRecordMap> {
+    return this.notionAPI.getPage(pageId)
   }
 
   isConfigured(): boolean {
@@ -108,14 +110,10 @@ export class TimelineNotionClient {
         checkbox: { equals: true },
       }
 
-      const sorts: DataSourceSort[] = [
-        { property: "Order", direction: "ascending" },
-      ]
-
       const response = (await this.client.request({
         method: "post",
         path: `data_sources/${dataSourceId}/query`,
-        body: { filter, sorts },
+        body: { filter },
       })) as DataSourceQueryResponse
 
       return response.results

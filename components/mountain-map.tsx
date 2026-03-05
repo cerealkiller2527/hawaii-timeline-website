@@ -7,23 +7,34 @@ import { motion, useInView } from "framer-motion"
 import { TattooCorner } from "./tattoo-overlays"
 import { buildSplinePath, distributeEvenly } from "@/lib/trail-utils"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { TimelineNotionRenderer } from "@/components/notion/timeline-notion-renderer"
+import { TimelineTOC } from "@/components/notion/timeline-toc"
+import { useContentTOC } from "@/lib/hooks/use-content-toc"
+import type { ExtendedRecordMap } from "notion-types"
+import type { PageContentMap } from "@/lib/notion/notion-service"
 
 function TimelineModal({
   events,
   activeIdx,
   onClose,
   onNavigate,
+  pageContent,
 }: {
   events: TimelineEvent[]
   activeIdx: number
   onClose: () => void
   onNavigate: (idx: number) => void
+  pageContent: PageContentMap
 }) {
   const event = events[activeIdx]
   if (!event) return null
   const config = CATEGORY_CONFIG[event.category]
   const hasPrev = activeIdx > 0
   const hasNext = activeIdx < events.length - 1
+  const contentScrollRef = useRef<HTMLDivElement>(null)
+
+  const recordMap: ExtendedRecordMap | undefined = pageContent[event.id]
+  const { nestedSections, sectionIds, showTOC } = useContentTOC(recordMap)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -34,63 +45,89 @@ function TimelineModal({
     return () => window.removeEventListener("keydown", onKey)
   }, [activeIdx, hasPrev, hasNext, onNavigate])
 
+  useEffect(() => {
+    if (contentScrollRef.current) {
+      contentScrollRef.current.scrollTop = 0
+    }
+  }, [activeIdx])
+
+  const hasContent = !!recordMap && Object.keys(recordMap.block || {}).length > 1
+
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-[calc(100%-2rem)] sm:w-[calc(100%-4rem)] max-w-3xl p-0 gap-0 border-0 bg-transparent shadow-none [&>button]:hidden">
+      <DialogContent className={`w-[calc(100%-2rem)] sm:w-[calc(100%-4rem)] p-0 gap-0 border-0 bg-transparent shadow-none [&>button]:hidden ${hasContent ? "max-w-5xl" : "max-w-3xl"}`}>
         <DialogTitle className="sr-only">{event.year}: {event.title}</DialogTitle>
 
-        <div className="frost-heavy rounded-2xl overflow-hidden relative">
-          <div className="h-2 relative overflow-hidden" style={{ background: `linear-gradient(90deg, ${config.color}, ${config.color}80)` }}>
+        <div className="frost-heavy rounded-2xl overflow-hidden relative max-h-[90vh] flex flex-col">
+          <div className="h-2 relative overflow-hidden shrink-0" style={{ background: `linear-gradient(90deg, ${config.color}, ${config.color}80)` }}>
             <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "url(/art/tribal-pattern.svg)", backgroundSize: "80px" }} />
           </div>
 
-          <div className="p-6 sm:p-8 md:p-10">
-            <div className="flex items-center gap-3 mb-6">
-              <span className="w-2.5 h-2.5 rounded-full animate-pulse-glow" style={{ backgroundColor: config.color }} />
-              <span className="text-xs text-foreground/55 tracking-[0.25em] uppercase font-semibold">{config.label}</span>
-            </div>
+          <div className="flex flex-1 min-h-0">
+            <div ref={contentScrollRef} className="flex-1 overflow-y-auto p-6 sm:p-8 md:p-10">
+              <div className="flex items-center gap-3 mb-6">
+                <span className="w-2.5 h-2.5 rounded-full animate-pulse-glow" style={{ backgroundColor: config.color }} />
+                <span className="text-xs text-foreground/55 tracking-[0.25em] uppercase font-semibold">{config.label}</span>
+              </div>
 
-            <div className="mb-8">
-              <p className="font-serif text-5xl sm:text-6xl md:text-7xl font-light leading-none mb-4" style={{ color: config.color }}>
-                {event.year}
+              <div className="mb-8">
+                <p className="font-serif text-5xl sm:text-6xl md:text-7xl font-light leading-none mb-4" style={{ color: config.color }}>
+                  {event.year}
+                </p>
+                <h3 className="font-serif text-2xl sm:text-3xl md:text-4xl text-foreground leading-tight font-medium">
+                  {event.title}
+                </h3>
+              </div>
+
+              <p className="text-sm sm:text-base text-foreground/65 leading-relaxed mb-6 max-w-2xl">
+                {event.description}
               </p>
-              <h3 className="font-serif text-2xl sm:text-3xl md:text-4xl text-foreground leading-tight font-medium">
-                {event.title}
-              </h3>
+
+              <div className="flex items-center gap-2 text-xs text-primary/60 mb-6">
+                <MapPin className="h-3.5 w-3.5" />
+                <span className="tracking-wider font-medium">{event.location}</span>
+              </div>
+
+              {hasContent && (
+                <div className="border-t border-foreground/8 pt-6">
+                  <TimelineNotionRenderer recordMap={recordMap} />
+                </div>
+              )}
+
+              <div className="flex items-center justify-between mt-8 pt-5 border-t border-foreground/8">
+                <button
+                  onClick={() => hasPrev && onNavigate(activeIdx - 1)}
+                  disabled={!hasPrev}
+                  className="flex items-center gap-2 text-sm text-foreground/50 hover:text-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  <span className="hidden sm:inline">{hasPrev ? events[activeIdx - 1].year : ""}</span>
+                </button>
+
+                <span className="text-xs text-foreground/30 tracking-wider">
+                  {activeIdx + 1} / {events.length}
+                </span>
+
+                <button
+                  onClick={() => hasNext && onNavigate(activeIdx + 1)}
+                  disabled={!hasNext}
+                  className="flex items-center gap-2 text-sm text-foreground/50 hover:text-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <span className="hidden sm:inline">{hasNext ? events[activeIdx + 1].year : ""}</span>
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
-            <p className="text-sm sm:text-base text-foreground/65 leading-relaxed mb-8 max-w-2xl">
-              {event.description}
-            </p>
-
-            <div className="flex items-center gap-2 text-xs text-primary/60 pt-5 border-t border-foreground/8">
-              <MapPin className="h-3.5 w-3.5" />
-              <span className="tracking-wider font-medium">{event.location}</span>
-            </div>
-
-            <div className="flex items-center justify-between mt-8 pt-5 border-t border-foreground/8">
-              <button
-                onClick={() => hasPrev && onNavigate(activeIdx - 1)}
-                disabled={!hasPrev}
-                className="flex items-center gap-2 text-sm text-foreground/50 hover:text-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                <span className="hidden sm:inline">{hasPrev ? events[activeIdx - 1].year : ""}</span>
-              </button>
-
-              <span className="text-xs text-foreground/30 tracking-wider">
-                {activeIdx + 1} / {events.length}
-              </span>
-
-              <button
-                onClick={() => hasNext && onNavigate(activeIdx + 1)}
-                disabled={!hasNext}
-                className="flex items-center gap-2 text-sm text-foreground/50 hover:text-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                <span className="hidden sm:inline">{hasNext ? events[activeIdx + 1].year : ""}</span>
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
+            {showTOC && hasContent && (
+              <div className="hidden lg:block w-56 shrink-0 border-l border-foreground/8 p-5 overflow-y-auto">
+                <TimelineTOC
+                  sections={nestedSections}
+                  sectionIds={sectionIds}
+                  containerRef={contentScrollRef}
+                />
+              </div>
+            )}
           </div>
 
           <button
@@ -231,7 +268,7 @@ function Legend() {
   )
 }
 
-export function MountainMap({ events: propEvents }: { events?: TimelineEvent[] }) {
+export function MountainMap({ events: propEvents, pageContent = {} }: { events?: TimelineEvent[]; pageContent?: PageContentMap }) {
   const events = propEvents && propEvents.length > 0 ? propEvents : FALLBACK_EVENTS
   const [activeIdx, setActiveIdx] = useState<number | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -313,6 +350,7 @@ export function MountainMap({ events: propEvents }: { events?: TimelineEvent[] }
           activeIdx={activeIdx}
           onClose={() => setActiveIdx(null)}
           onNavigate={handleNavigate}
+          pageContent={pageContent}
         />
       )}
     </section>
